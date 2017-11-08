@@ -1,12 +1,15 @@
 package com.joybar.librarycalendar.adapter;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Color;
+import android.os.Build;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.joybar.librarycalendar.R;
@@ -22,9 +25,10 @@ import java.util.List;
 public class CalendarGridViewAdapter extends BaseAdapter {
 
     private List<CalendarDate> mListData = new ArrayList<>();
+    private Context context;
 
-
-    public CalendarGridViewAdapter(List<CalendarDate> mListData) {
+    public CalendarGridViewAdapter(Context context,List<CalendarDate> mListData) {
+        this.context = context;
         this.mListData = mListData;
     }
 
@@ -49,12 +53,12 @@ public class CalendarGridViewAdapter extends BaseAdapter {
     }
 
 
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
     public View getView(final int position, View convertView, final ViewGroup parent) {
         ViewHolder viewHolder = null;
         CalendarDate calendarDate = mListData.get(position);
         if (convertView == null) {
-            LayoutInflater inflater = (LayoutInflater) parent.getContext()
-                    .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            LayoutInflater inflater = (LayoutInflater) parent.getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             convertView = inflater.inflate(R.layout.item_calendar, parent, false);
             viewHolder = new ViewHolder(convertView);
             convertView.setTag(viewHolder);
@@ -63,33 +67,29 @@ public class CalendarGridViewAdapter extends BaseAdapter {
         }
         viewHolder.tv_day.setText(calendarDate.getSolar().solarDay+"");
 
-        String str;
-
-        if(!TextUtils.isEmpty(calendarDate.getSolar().solar24Term)){
-            str =  calendarDate.getSolar().solar24Term;
-        }else if(!TextUtils.isEmpty(calendarDate.getSolar().solarFestivalName)){
-            str = calendarDate.getSolar().solarFestivalName;
-        }else{
-            str = calendarDate.getLunar().getChinaDayString(mListData.get(position).getLunar().lunarDay);
-        }
-        viewHolder.tv_lunar_day.setText(str);
-        if(mListData.get(position).isInThisMonth()){
-            viewHolder.tv_day.setTextColor(Color.parseColor("#000000"));
-        }else{
+        if (mListData.get(position).isInRange()) {
+            if (mListData.get(position).isInThisMonth()) {
+                viewHolder.tv_day.setTextColor(Color.parseColor("#000000"));
+            } else {
+                viewHolder.tv_day.setTextColor(Color.parseColor("#D7D7D7"));
+            }
+        } else {
             viewHolder.tv_day.setTextColor(Color.parseColor("#D7D7D7"));
-            viewHolder.tv_lunar_day.setTextColor(Color.parseColor("#D7D7D7"));
-
         }
+
+        if (calendarDate.isUnSelectable())
+            viewHolder.column.setBackground(context.getResources().getDrawable(R.drawable.disabled));
+
         return convertView;
     }
 
 
     public static class ViewHolder {
+        private LinearLayout column;
         private TextView tv_day;
-        private TextView tv_lunar_day;
         public ViewHolder(View itemView) {
+            column = (LinearLayout) itemView.findViewById(R.id.column);
             tv_day = (TextView) itemView.findViewById(R.id.tv_day);
-            tv_lunar_day = (TextView) itemView.findViewById(R.id.tv_lunar_day);
         }
 
     }
