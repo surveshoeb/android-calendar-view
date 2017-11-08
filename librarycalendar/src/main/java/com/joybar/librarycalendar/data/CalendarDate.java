@@ -5,10 +5,13 @@ package com.joybar.librarycalendar.data;
  */
 public class CalendarDate {
 
-    private Lunar lunar = new Lunar();//农历
-    private Solar solar = new Solar();//公历
-    private boolean isInThisMonth; //是否在当月
-    private boolean isSelect;//是否被选中
+    private Lunar lunar = new Lunar();//Lunar calendar
+    private Solar solar = new Solar();//Gregorian calendar
+    private boolean isInThisMonth; //Whether in the month
+    private boolean isSelect;//Is selected?
+    private boolean unSelectable;
+    private boolean inRange;
+
 
     public CalendarDate(int year, int month, int day, boolean isInThisMonth, boolean isSelect, Lunar lunar) {
         this.isInThisMonth = isInThisMonth;
@@ -27,6 +30,7 @@ public class CalendarDate {
     public boolean isInThisMonth() {
         return isInThisMonth;
     }
+
 
     public void setIsInThisMonth(boolean isInThisMonth) {
         this.isInThisMonth = isInThisMonth;
@@ -62,5 +66,15 @@ public class CalendarDate {
 
     public void setLunar(Lunar lunar) {
         this.lunar = lunar;
+    }
+
+    public void setUnSelectable(boolean unSelectable) { this.unSelectable = unSelectable; }
+    public boolean isUnSelectable() { return unSelectable; }
+
+    public boolean isInRange() {
+        return inRange;
+    }
+    public void setInRange(boolean inRange) {
+        this.inRange = inRange;
     }
 }
