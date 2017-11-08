@@ -3,10 +3,12 @@ package com.joybar.librarycalendar.fragment;
 import android.content.Context;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.CalendarView;
 import android.widget.GridView;
 
 import com.joybar.librarycalendar.R;
@@ -15,6 +17,7 @@ import com.joybar.librarycalendar.controller.CalendarDateController;
 import com.joybar.librarycalendar.data.CalendarDate;
 import com.joybar.librarycalendar.utils.DateUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -22,6 +25,8 @@ import java.util.List;
  * Created by joybar on 4/27/16.
  */
 public class CalendarViewFragment extends Fragment {
+
+    private static final String TAG = "CalendarViewFragment";
 
     private static final String YEAR = "year";
     private static final String MONTH = "month";
@@ -32,6 +37,8 @@ public class CalendarViewFragment extends Fragment {
     private GridView mGridView;
     private OnDateClickListener onDateClickListener;
     private OnDateCancelListener onDateCancelListener;
+    private OnDateLoaded onDateLoaded;
+    public static List<CalendarDate> mListDataCalendar = new ArrayList<>();
 
     public CalendarViewFragment() {
     }
@@ -60,6 +67,8 @@ public class CalendarViewFragment extends Fragment {
         super.onAttach(context);
         try {
             onDateClickListener = (OnDateClickListener) context;
+            onDateLoaded = (OnDateLoaded) context;
+
             if(!isChoiceModelSingle){
                 //多选
                 onDateCancelListener = (OnDateCancelListener) context;
@@ -76,6 +85,7 @@ public class CalendarViewFragment extends Fragment {
             mYear = getArguments().getInt(YEAR);
             mMonth = getArguments().getInt(MONTH);
             isChoiceModelSingle = getArguments().getBoolean(CHOICE_MODE_SINGLE, false);
+            mListDataCalendar = CalendarDateController.getCalendarDate(mYear, mMonth);
         }
     }
 
@@ -89,10 +99,15 @@ public class CalendarViewFragment extends Fragment {
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        List<CalendarDate> mListDataCalendar;//日历数据
-        mListDataCalendar = CalendarDateController.getCalendarDate(mYear, mMonth);
-        mGridView.setAdapter(new CalendarGridViewAdapter(mListDataCalendar));
-        final List<CalendarDate> finalMListDataCalendar = mListDataCalendar;
+//        final List<CalendarDate> finalMListDataCalendar = mListDataCalendar;
+
+        onDateLoaded.onDateLoaded();
+        final List<CalendarDate> finalMListDataCalendar = onDateLoaded.outOffRange(mListDataCalendar);
+        final List<CalendarDate> finalList = onDateLoaded.finalList(mListDataCalendar);
+
+        mGridView.setAdapter(new CalendarGridViewAdapter(getContext(),finalMListDataCalendar));
+
+
         if (isChoiceModelSingle) {
             mGridView.setChoiceMode(GridView.CHOICE_MODE_SINGLE);
         } else {
@@ -101,25 +116,34 @@ public class CalendarViewFragment extends Fragment {
         mGridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
                 CalendarDate calendarDate = ((CalendarGridViewAdapter) mGridView.getAdapter()).getListData().get(position);
+
                 if (isChoiceModelSingle) {
-                    //单选
-                    if (finalMListDataCalendar.get(position).isInThisMonth()) {
+                    //Radio
+                    if (finalMListDataCalendar.get(position).isInThisMonth() && finalMListDataCalendar.get(position).isInRange()) {
                         onDateClickListener.onDateClick(calendarDate);
                     } else {
                         mGridView.setItemChecked(position, false);
                     }
                 } else {
-                    //多选
-                    if (finalMListDataCalendar.get(position).isInThisMonth()) {
-                       // mGridView.getCheckedItemIds()
-                        if(!mGridView.isItemChecked(position)){
-                            onDateCancelListener.onDateCancel(calendarDate);
-                        } else {
-                            onDateClickListener.onDateClick(calendarDate);
-                        }
+                    //Multiple choice
+                    if (finalMListDataCalendar.get(position).isInRange()) {
+                        if (finalMListDataCalendar.get(position).isInThisMonth() && finalMListDataCalendar.get(position).isInRange()) {
+                            // mGridView.getCheckedItemIds()
+                            Log.d(TAG, "Clicked Position - " + position);
+                            Log.d(TAG, "Solar Date - " + finalMListDataCalendar.get(position).getSolar());
+//                        Log.d(TAG,"Clicked Position - "+position);
+                            if (!mGridView.isItemChecked(position)) {
+                                onDateCancelListener.onDateCancel(calendarDate);
+                            } else {
+                                onDateClickListener.onDateClick(calendarDate);
+                            }
+                            if (finalMListDataCalendar.get(position).isUnSelectable())
+                                mGridView.setItemChecked(position, false);
 
-                    } else {
+                        }
+                    }else {
                         mGridView.setItemChecked(position, false);
                     }
 
@@ -129,7 +153,7 @@ public class CalendarViewFragment extends Fragment {
         mGridView.post(new Runnable() {
             @Override
             public void run() {
-                //需要默认选中当天
+                //Need to be selected by default the same day
                 List<CalendarDate> mListData = ((CalendarGridViewAdapter) mGridView.getAdapter()).getListData();
                 int count = mListData.size();
                 for (int i = 0; i < count; i++) {
@@ -146,6 +170,17 @@ public class CalendarViewFragment extends Fragment {
 
             }
         });
+    }
+
+    public static void setUnSelecteable(String unSelecteable) {
+        for (int i = 0; i < mListDataCalendar.size(); i++) {
+            CalendarDate date = mListDataCalendar.get(i);
+            String formatedDate = date.getSolar().solarDay+"-"+date.getSolar().solarMonth+"-"+date.getSolar().solarYear;
+            if (formatedDate.equals(unSelecteable)) {
+                mListDataCalendar.get(i).setUnSelectable(true);
+                break;
+            }
+        }
     }
 
     @Override
@@ -180,4 +215,11 @@ public class CalendarViewFragment extends Fragment {
     public interface OnDateCancelListener {
         void onDateCancel(CalendarDate calendarDate);
     }
+
+    public interface OnDateLoaded {
+        void onDateLoaded();
+        List<CalendarDate> outOffRange(List<CalendarDate> calendarDateList);
+        List<CalendarDate> finalList(List<CalendarDate> finalList);
+    }
+
 }

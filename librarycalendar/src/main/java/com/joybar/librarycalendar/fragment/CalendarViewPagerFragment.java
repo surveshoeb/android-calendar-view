@@ -8,6 +8,7 @@ import android.support.v4.view.ViewPager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
 import com.joybar.librarycalendar.R;
 import com.joybar.librarycalendar.adapter.CalendarViewPagerAdapter;
@@ -22,6 +23,7 @@ public class CalendarViewPagerFragment extends Fragment {
     private boolean isChoiceModelSingle;
     private ViewPager viewPager;
     private OnPageChangeListener onPageChangeListener;
+    TextView monthText;
 
     public CalendarViewPagerFragment() {
     }
@@ -55,6 +57,7 @@ public class CalendarViewPagerFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_calendar_viewpager, container, false);
+        monthText = (TextView) view.findViewById(R.id.month);
         initViewPager(view);
         return view;
     }
@@ -71,17 +74,50 @@ public class CalendarViewPagerFragment extends Fragment {
                 int month = myAdapter.getMonthByPosition(position);
                // tv_date.setText(year+"-"+month+"");
                 onPageChangeListener.onPageChange(year,month);
+
+                monthText.setText(getMonth(month));
             }
             @Override
-            public void onPageScrolled(int position, float positionOffset,
-                                       int positionOffsetPixels) {
+            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+                int month = myAdapter.getMonthByPosition(position);
+                monthText.setText(getMonth(month));
             }
             @Override
             public void onPageScrollStateChanged(int state) {
+
             }
         });
     }
 
+    private String getMonth(int month) {
+        switch (month) {
+            case 1:
+                return "January";
+            case 2:
+                return "Feb";
+            case 3:
+                return "March";
+            case 4:
+                return "April";
+            case 5:
+                return "May";
+            case 6:
+                return "June";
+            case 7:
+                return "July";
+            case 8:
+                return "August";
+            case 9:
+                return "September";
+            case 10:
+                return "October";
+            case 11:
+                return "November";
+            case 12:
+                return "December";
+        }
+        return "";
+    }
 
 
     public interface OnPageChangeListener {
